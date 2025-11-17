@@ -1,0 +1,47 @@
+---
+- name: Configure hostnames and interface descriptions
+  hosts: routers
+  gather_facts: no
+  tasks:
+
+    - name: Set router hostname
+      cisco.ios.ios_config:
+        lines:
+          - hostname {{ device_hostname }}
+      register: hostname_result
+
+    - name: Show hostname change
+      debug:
+        msg: "Hostname is now {{ device_hostname }} (Changed: {{ hostname_result.changed }})"
+
+    - name: Configure Ethernet0/0 description (use parents to enter interface)
+      cisco.ios.ios_config:
+        parents: interface Ethernet0/0
+        lines:
+          - description {{ interface_description }}
+      register: interface_result
+
+    - name: Show interface description
+      debug:
+        msg: "Ethernet0/0 description: {{ interface_description }} (Changed: {{ interface_result.changed }})"
+
+    - name: Verify hostname from device
+      cisco.ios.ios_command:
+        commands:
+          - show run | include hostname
+      register: show_hostname
+
+    - name: Output verified hostname
+      debug:
+        var: show_hostname.stdout_lines
+
+    - name: Verify interface description from device
+      cisco.ios.ios_command:
+        commands:
+          - show run interface Ethernet0/0 | include description
+      register: show_interface
+
+    - name: Output verified interface description
+      debug:
+        var: show_interface.stdout_lines
+
